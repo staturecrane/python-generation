@@ -27,13 +27,14 @@ optimizer = torch.optim.Adam(rnn.parameters(), lr=learning_rate)
 
 def train(embeddings_tensor, input_line_tensor, target_line_tensor):
 
-    hidden  = rnn.initHidden()
+    hidden, state  = rnn.initHidden()
 
     rnn.zero_grad()
 
     loss = 0
     for i in range(input_line_tensor.size()[0]):
-        output, hidden  = rnn(embeddings_tensor, input_line_tensor[i], hidden)
+        output, hidden, state  = rnn(embeddings_tensor, input_line_tensor[i], hidden,
+                state)
         loss += criterion(output, target_line_tensor[i])
 
     loss.backward()
@@ -44,15 +45,16 @@ def train(embeddings_tensor, input_line_tensor, target_line_tensor):
 
 max_length = SAMPLE_LENGTH
 
-def sample(start_letter="i"):
+def sample(start_letters="#idaue"):
+    start_letter = start_letters[random.randint(1, len(start_letters) - 1)]
     input = Variable(inputTensor(start_letter).cuda())
     embeddings = Variable(torch.zeros(1, Z_DIM).cuda())
-    hidden = rnn.initHidden()
+    hidden, state = rnn.initHidden()
 
     output_program = start_letter
 
     for i in range(max_length):
-        output, hidden = rnn(embeddings, input[0], hidden)
+        output, hidden, state = rnn(embeddings, input[0], hidden, state)
         topv, topi = output.data.topk(1)
         topi = topi[0][0]
         if topi == N_LETTERS - 1:
@@ -65,8 +67,9 @@ def sample(start_letter="i"):
 
 
 n_epochs = 100000
-print_every = 50
-plot_every = 500
+print_every = 100
+sample_every = 500
+save_every = 1000
 all_losses = []
 total_loss = 0
 
@@ -77,8 +80,12 @@ for epoch in range(1, n_epochs):
     output, loss = train(*randomTrainingSet(Z_DIM, programs))
     total_loss += loss
 
-    if epoch % 100 == 0:
+    if epoch % print_every == 0:
         print("epoch {}: {}".format(epoch, loss))
 
-    if epoch % print_every == 0:
+    if epoch % sample_every == 0:
         print(sample())
+
+    if epoch % save_every == 0:
+        with open('checkpoints/model.pt', 'wb') as f:
+            torch.save(rnn, f)

@@ -37,13 +37,18 @@ def inputTensor(line):
 
 def targetTensor(line):
     length = SAMPLE_LENGTH if len(line) > SAMPLE_LENGTH else len(line)
-    letter_indexes = [ALL_LETTERS.find(line[li]) for li in range(1, length)]
+    letter_indexes = [ALL_LETTERS.find(line[li]) for li in range(1,
+        length)]
     letter_indexes.append(N_LETTERS - 1)
     return torch.LongTensor(letter_indexes)
 
 
 def randomTrainingSet(z_dim, l):
     line = randomChoice(l)
+    length = SAMPLE_LENGTH if len(line) > SAMPLE_LENGTH else len(line)
+    if length > SAMPLE_LENGTH:
+        random_idx = torch.randint(0, length - SAMPLE_LENGTH - 1)
+        line = line[random_idx : random_idx + SAMPLE_LENGTH + 1]
     embeddings_tensor = Variable(torch.zeros(1, z_dim))
     input_line_tensor = Variable(inputTensor(line))
     target_line_tensor = Variable(targetTensor(line))
