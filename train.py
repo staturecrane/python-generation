@@ -10,14 +10,18 @@ from model.model import RNN
 from config import N_LETTERS, ALL_LETTERS, Z_DIM, SAMPLE_LENGTH
 
 parser = argparse.ArgumentParser(description='Train to generate Python code')
-parser.add_argument('data', type=str, help='the file containing training text')
+parser.add_argument('--data', type=str, help='the file containing training text')
+parser.add_argument('--pretrained', type=str, help='path to model checkpoint')
 
 args = parser.parse_args(sys.argv[1:])
 
 programs = readLines(args.data)
 
-rnn = RNN(Z_DIM, N_LETTERS, 128, N_LETTERS)
-rnn.cuda()
+if args.pretrained:
+    rnn= torch.load(args.pretrained).cuda()
+else:
+    rnn = RNN(Z_DIM, N_LETTERS, 128, N_LETTERS)
+    rnn.cuda()
 
 criterion = nn.CrossEntropyLoss()
 
